@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var cafeList = map[string][]string{
@@ -47,19 +49,27 @@ func mainHandle(w http.ResponseWriter, req *http.Request) {
 }
 
 func TestMainHandlerWhenCountMoreThanTotal(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "http://example.com/?city=moscow&count=10", nil)
-	responseRecorder := httptest.NewRecorder()
+	// Общее количество кафе в городе "Москва" - 4
+	totalCount := 4
+	city := "moscow"
+	count := totalCount + 1 // Запрашиваем больше, чем доступно кафе
 
+	req, err := http.NewRequest("GET", "/?city="+city+"&count="+strconv.Itoa(count), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseRecorder := httptest.NewRecorder()
 	handler := http.HandlerFunc(mainHandle)
 	handler.ServeHTTP(responseRecorder, req)
 
-	expectedStatus := http.StatusOK
-	if status := responseRecorder.Code; status != expectedStatus {
-		t.Errorf("unexpected status: got %v want %v", status, expectedStatus)
-	}
+	// Проверяем, что статус ответа - OK
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	expectedBody := "Мир кофе,Сладкоежка,Кофе и завтраки,Сытый студент"
-	if responseRecorder.Body.String() != expectedBody {
-		t.Errorf("unexpected body: got %v want %v", responseRecorder.Body.String(), expectedBody)
-	}
+	// Извлекаем тело ответа
+	body := responseRecorder.Body.String()
+
+	// Проверяем, что тело ответа содержит все кафе, разделенные запятыми
+	expectedBody := strings.Join(cafeList[city], ",")
+	assert.Equal(t, expectedBody, body)
 }
