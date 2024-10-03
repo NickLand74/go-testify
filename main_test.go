@@ -6,6 +6,20 @@ import (
 	"testing"
 )
 
+func TestMainHandlerWithValidRequest(t *testing.T) {
+	req := httptest.NewRequest("GET", "/?city=moscow&count=2", nil)
+	responseRecorder := httptest.NewRecorder()
+	handler := http.HandlerFunc(mainHandle)
+
+	handler.ServeHTTP(responseRecorder, req)
+
+	// Проверяем код состояния
+	require.Equal(t, http.StatusOK, responseRecorder.Code, "handler returned неверный код состояния")
+
+	// Проверяем, что тело ответа не пустое
+	assert.NotEmpty(t, responseRecorder.Body.String(), "тело ответа должно быть не пустым")
+}
+
 func TestMainHandlerWhenCountMoreThanTotal(t *testing.T) {
 	req := httptest.NewRequest("GET", "/?city=moscow&count=10", nil)
 	responseRecorder := httptest.NewRecorder()
